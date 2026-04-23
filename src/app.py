@@ -40,6 +40,7 @@ if submit and uploaded_file:
 
     st.json(result)
 
+st.dataframe(pd.read_excel(CARDS_EXCEL_PATH))
 with open(CARDS_EXCEL_PATH, "rb") as f:
     st.download_button(
         label="Descargar Excel",
@@ -47,4 +48,3 @@ with open(CARDS_EXCEL_PATH, "rb") as f:
         file_name="cards.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
-st.dataframe(pd.read_excel(CARDS_EXCEL_PATH))
