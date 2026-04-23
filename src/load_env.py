@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Description: Load environment variables from env/.env file.
+Description: Load environment variables from env/.env file or Streamlit secrets.
 """
 
 from pathlib import Path
@@ -13,11 +13,17 @@ ENV_PATH = Path(__file__).parent.parent / "env" / ".env"
 
 
 def load_environment_variables():
-    if not ENV_PATH.exists():
-        raise FileNotFoundError(f"Environment file not found at: {ENV_PATH}")
+    if ENV_PATH.exists():
+        if not load_dotenv(ENV_PATH, override=True):
+            raise RuntimeError(f"Failed to load environment file at: {ENV_PATH}")
+        return
 
-    if not load_dotenv(ENV_PATH, override=True):
-        raise RuntimeError(f"Failed to load environment file at: {ENV_PATH}")
+    try:
+        import streamlit as st
+        for key, value in st.secrets.items():
+            environ[key] = str(value)
+    except Exception:
+        raise FileNotFoundError(f"Environment file not found at: {ENV_PATH} and no Streamlit secrets available.")
 
 
 def load_env_var(env_var_name: str, target_type=None):
