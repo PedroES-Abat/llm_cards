@@ -25,9 +25,7 @@ def convert_img_to_bytes(img: UploadedFile) -> dict:
     return process_card_img(image_bytes, img_ext)
 
 
-"""
-UI of the program
-"""
+# UI of the program
 uploaded_file = st.file_uploader("Sube la tarjeta", type=["jpg", "jpeg", "png"])
 comments = st.text_area("Comentarios")
 submit = st.button("Enviar")
