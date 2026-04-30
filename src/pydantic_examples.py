@@ -52,16 +52,22 @@ def create_ai_agent_cards() -> Agent:
 
 def query_agent_img(agent: Agent, image_bytes: bytes, img_ext: str):
     """Sends the image to the AI agent and returns response."""
+    import time
 
     prompt = "Please extract the relevant data from the image."
-    print(f"Media type:  image/{img_ext}")
 
-    prompt_output = agent.run_sync(
-        [
-            prompt,
-            BinaryContent(data=image_bytes, media_type=f"image/{img_ext}"),
-        ]
-    )
+    for attempt in range(3):
+        try:
+            return agent.run_sync(
+                [
+                    prompt,
+                    BinaryContent(data=image_bytes, media_type=f"image/{img_ext}"),
+                ]
+            )
+        except Exception as e:
+            if attempt == 2:
+                raise
+            time.sleep(2)
 
     return prompt_output
 
