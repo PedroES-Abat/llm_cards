@@ -5,6 +5,7 @@ Developer: Pedro Escobedo Straffon.
 Creation Date: 2026-04-22 09:54:40.
 Description: UI to extract the relevant data of a business card.
 """
+
 import streamlit as st
 import pandas as pd
 
@@ -41,7 +42,6 @@ if submit and uploaded_file:
     result["comments"] = comments
     insert_card_in_excel(result)
 
-    st.json(result)
 
 st.dataframe(pd.read_excel(CARDS_EXCEL_PATH))
 with open(CARDS_EXCEL_PATH, "rb") as f:
@@ -51,3 +51,19 @@ with open(CARDS_EXCEL_PATH, "rb") as f:
         file_name="cards.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
+
+if st.button("Limpiar Excel"):
+    df_empty = pd.DataFrame(
+        columns=[
+            "company_address",
+            "person_number",
+            "person_email",
+            "company_web",
+            "person_name",
+            "company_name",
+            "comments",
+        ]
+    )
+    df_empty.to_excel(CARDS_EXCEL_PATH, index=False, engine="openpyxl")
+    st.success("Excel limpiado")
+    st.rerun()
