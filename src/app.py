@@ -19,10 +19,15 @@ CARDS_EXCEL_PATH = Path(load_env_var("CARDS_EXCEL_PATH"))
 
 def convert_img_to_bytes(img: UploadedFile) -> dict:
     """Converts the image to bytes and sends it to process card"""
-    image_bytes = img.read()
-    img_ext = Path(img.name).suffix.replace(".", "")
+    from PIL import Image
+    import io
 
-    return process_card_img(image_bytes, img_ext)
+    image = Image.open(img).convert("RGB")
+    buffer = io.BytesIO()
+    image.save(buffer, format="JPEG")
+    image_bytes = buffer.getvalue()
+
+    return process_card_img(image_bytes, "jpeg")
 
 
 # UI of the program
