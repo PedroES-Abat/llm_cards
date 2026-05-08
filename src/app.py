@@ -43,6 +43,6 @@ if submit and uploaded_file:
 from sqlalchemy import create_engine
 
 engine = create_engine(load_env_var("DATABASE_URL"))
-df = pd.read_sql("SELECT * FROM CardsInfo", engine)
+df = pd.read_sql('SELECT * FROM "CardsInfo"', engine)
 engine.dispose()
 st.dataframe(df)
