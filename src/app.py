@@ -9,13 +9,11 @@ Description: UI to extract the relevant data of a business card.
 import streamlit as st
 import pandas as pd
 
-from pydantic_examples import process_card_img, insert_card_in_excel
+from pydantic_examples import process_card_img, insert_card_in_db
 from pydantic_examples import process_card_img
 from load_env import load_env_var
 from pathlib import Path
 from streamlit.runtime.uploaded_file_manager import UploadedFile
-
-CARDS_EXCEL_PATH = Path(load_env_var("CARDS_EXCEL_PATH"))
 
 
 def convert_img_to_bytes(img: UploadedFile) -> dict:
@@ -40,30 +38,11 @@ if submit and uploaded_file:
 
     result = convert_img_to_bytes(uploaded_file)
     result["comments"] = comments
-    insert_card_in_excel(result)
+    insert_card_in_db(result)
 
+from sqlalchemy import create_engine
 
-st.dataframe(pd.read_excel(CARDS_EXCEL_PATH))
-with open(CARDS_EXCEL_PATH, "rb") as f:
-    st.download_button(
-        label="Descargar Excel",
-        data=f,
-        file_name="cards.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
-
-if st.button("Limpiar Excel"):
-    df_empty = pd.DataFrame(
-        columns=[
-            "company_address",
-            "person_number",
-            "person_email",
-            "company_web",
-            "person_name",
-            "company_name",
-            "comments",
-        ]
-    )
-    df_empty.to_excel(CARDS_EXCEL_PATH, index=False, engine="openpyxl")
-    st.success("Excel limpiado")
-    st.rerun()
+engine = create_engine(load_env_var("DATABASE_URL"))
+df = pd.read_sql("SELECT * FROM business_cards", engine)
+engine.dispose()
+st.dataframe(df)

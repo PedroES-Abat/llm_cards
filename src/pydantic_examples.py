@@ -69,8 +69,6 @@ def query_agent_img(agent: Agent, image_bytes: bytes, img_ext: str):
                 raise
             time.sleep(2)
 
-    return prompt_output
-
 
 def process_card_img(image_bytes: bytes, img_ext: str) -> dict:
     """Runs the AI agent on a card image and saves the result to Excel."""
@@ -81,15 +79,12 @@ def process_card_img(image_bytes: bytes, img_ext: str) -> dict:
     return prompt_output.data.model_dump()
 
 
-def insert_card_in_excel(card_info: dict) -> None:
-    """Inserts the bussines card information in a Excel"""
+def insert_card_in_db(card_info: dict) -> None:
+    """Inserts business card information into PostgreSQL."""
+    from sqlalchemy import create_engine
 
-    CARDS_EXCEL_PATH = Path(load_env_var("CARDS_EXCEL_PATH"))
-
-    if not CARDS_EXCEL_PATH.exists():
-        raise FileNotFoundError(f"Excel file not found: {CARDS_EXCEL_PATH}")
-
-    df = pd.read_excel(CARDS_EXCEL_PATH, engine="openpyxl")
-    new_row = pd.DataFrame([card_info])
-    df = pd.concat([df, new_row], ignore_index=True)
-    df.to_excel(CARDS_EXCEL_PATH, index=False, engine="openpyxl")
+    engine = create_engine(load_env_var("DATABASE_URL"))
+    pd.DataFrame([card_info]).to_sql(
+        "business_cards", engine, if_exists="append", index=False
+    )
+    engine.dispose()
