@@ -83,9 +83,8 @@ def insert_card_in_db(card_info: dict) -> None:
     """Inserts business card information into PostgreSQL."""
     from sqlalchemy import create_engine
 
+    CardsInfo = "CardsInfo"
     engine = create_engine(load_env_var("DATABASE_URL"))
-    pd.DataFrame([card_info]).to_sql(
-        "CardsInfo", engine, if_exists="append", index=False
-    )
+    pd.DataFrame([card_info]).to_sql(CardsInfo, engine, if_exists="append", index=False)
 
     engine.dispose()
