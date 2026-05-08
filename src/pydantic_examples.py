@@ -19,7 +19,7 @@ AI_MODEL = load_env_var("GEMINI_AI_MODEL")
 
 
 class CardOutput(BaseModel):
-    Companyaddress: str
+    CompanyAddress: str
     PersonNumber: str
     PersonEmail: str
     CompanyWeb: str
