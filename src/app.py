@@ -37,12 +37,12 @@ submit = st.button("Enviar")
 if submit and uploaded_file:
 
     result = convert_img_to_bytes(uploaded_file)
-    result["comments"] = comments
+    result["Comments"] = comments
     insert_card_in_db(result)
 
 from sqlalchemy import create_engine
 
 engine = create_engine(load_env_var("DATABASE_URL"))
-df = pd.read_sql("SELECT * FROM business_cards", engine)
+df = pd.read_sql("SELECT * FROM CardsInfo", engine)
 engine.dispose()
 st.dataframe(df)

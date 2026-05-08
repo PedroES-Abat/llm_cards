@@ -19,12 +19,12 @@ AI_MODEL = load_env_var("GEMINI_AI_MODEL")
 
 
 class CardOutput(BaseModel):
-    company_address: str
-    person_number: str
-    person_email: str
-    company_web: str
-    person_name: str
-    company_name: str
+    Companyaddress: str
+    PersonNumber: str
+    PersonEmail: str
+    CompanyWeb: str
+    PersonName: str
+    CompanyName: str
 
 
 def create_ai_agent_cards() -> Agent:
@@ -85,6 +85,6 @@ def insert_card_in_db(card_info: dict) -> None:
 
     engine = create_engine(load_env_var("DATABASE_URL"))
     pd.DataFrame([card_info]).to_sql(
-        "business_cards", engine, if_exists="append", index=False
+        "CardsInfo", engine, if_exists="append", index=False
     )
     engine.dispose()
