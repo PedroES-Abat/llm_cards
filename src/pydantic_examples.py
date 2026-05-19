@@ -13,6 +13,7 @@ from pathlib import Path
 from pydantic_ai import Agent, BinaryContent
 from pydantic import BaseModel
 from load_env import load_environment_variables, load_env_var
+from sqlalchemy import create_engine
 
 load_environment_variables()
 AI_MODEL = load_env_var("GEMINI_AI_MODEL")
@@ -81,7 +82,6 @@ def process_card_img(image_bytes: bytes, img_ext: str) -> dict:
 
 def insert_card_in_db(card_info: dict) -> None:
     """Inserts business card information into PostgreSQL."""
-    from sqlalchemy import create_engine
 
     engine = create_engine(load_env_var("DATABASE_URL"))
     pd.DataFrame([card_info]).to_sql(
