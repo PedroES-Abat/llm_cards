@@ -79,8 +79,6 @@ def query_agent_img(agent: Agent, image_bytes: bytes, img_ext: str) -> any:
             Exception
         ) as e:  # TODO pydantic_ai.exceptions.ModelHTTPError poner error de comunicacion con Gemini vuelve a intentarlo
             if attempt == 2:
-                if isinstance(e, ModelHTTPError):
-                    print("Error de comunicación con Gemini, vuelve a intentarlo")
                 raise
             sleep(2)
 
