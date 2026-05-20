@@ -8,12 +8,13 @@ Description: Extracts contact information from business card images using a Gemi
 """
 
 import pandas as pd
-
-from pathlib import Path
 from pydantic_ai import Agent, BinaryContent
+from pydantic_ai.exceptions import ModelHTTPError
 from pydantic import BaseModel
-from load_env import load_environment_variables, load_env_var
 from sqlalchemy import create_engine
+from time import sleep
+
+from load_env import load_environment_variables, load_env_var
 
 load_environment_variables()
 AI_MODEL = load_env_var("GEMINI_AI_MODEL")
@@ -21,7 +22,9 @@ AI_MODEL = load_env_var("GEMINI_AI_MODEL")
 
 class CardOutput(BaseModel):
     CompanyAddress: str
-    PersonNumber: str
+    PersonMobileNumber: str
+    PersonOfficeNumber: str
+    PersonRole: str
     PersonEmail: str
     CompanyWeb: str
     PersonName: str
@@ -35,25 +38,26 @@ def create_ai_agent_cards() -> Agent:
         AI_MODEL,
         result_type=CardOutput,
         system_prompt=(
-            "You are an AI agent specialized in extracting contact information from business cards."
-            "Given an image of a business card, extract the following information:"
-            "1. Company address: Extract the full address of the company as shown on the card."
-            "2. Person phone number: Extract the phone number of the person on the card."
-            "3. Person email: Extract the email address of the person on the card."
-            "4. Company website: Extract the website URL of the company as shown on the card."
-            "5. Person name: Extract the full name of the person on the card."
-            "6. Company name: Extract the name of the company as shown on the card."
-            "Be precise and extract only information that is clearly visible on the card."
-            "If a field is not present, return an empty string for that field."
+            "You are an AI agent specialized in extracting contact information from business cards. "
+            "Given an image of a business card, extract the following information: "
+            "1. Company address: the full address of the company as shown on the card. "
+            "2. Person mobile number: the personal or cell phone number of the person on the card. "
+            "3. Person office number: the office or work phone number of the person on the card. "
+            "4. Person role: the job title or position of the person on the card. "
+            "5. Person email: the email address of the person on the card. "
+            "6. Company website: the website URL of the company as shown on the card. "
+            "7. Person name: the full name of the person on the card. "
+            "8. Company name: the name of the company as shown on the card. "
+            "Be precise and extract only information that is clearly visible on the card. "
+            "If a field is not present on the card, return an empty string for that field."
         ),
     )
 
     return agent
 
 
-def query_agent_img(agent: Agent, image_bytes: bytes, img_ext: str):
+def query_agent_img(agent: Agent, image_bytes: bytes, img_ext: str) -> any:
     """Sends the image to the AI agent and returns response."""
-    import time
 
     prompt = "Please extract the relevant data from the image."
 
@@ -65,10 +69,14 @@ def query_agent_img(agent: Agent, image_bytes: bytes, img_ext: str):
                     BinaryContent(data=image_bytes, media_type=f"image/{img_ext}"),
                 ]
             )
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # TODO pydantic_ai.exceptions.ModelHTTPError poner error de comunicacion con Gemini vuelve a intentarlo
             if attempt == 2:
+                if isinstance(e, ModelHTTPError):
+                    print("Error de comunicación con Gemini, vuelve a intentarlo")
                 raise
-            time.sleep(2)
+            sleep(2)
 
 
 def process_card_img(image_bytes: bytes, img_ext: str) -> dict:
@@ -81,6 +89,7 @@ def process_card_img(image_bytes: bytes, img_ext: str) -> dict:
 
 
 def insert_card_in_db(card_info: dict) -> None:
+    # TODO Copiar create engine de SAF. Crear archivo de seguridad buscarlo en SAF (para el encriptado)
     """Inserts business card information into PostgreSQL."""
 
     engine = create_engine(load_env_var("DATABASE_URL"))
@@ -89,3 +98,6 @@ def insert_card_in_db(card_info: dict) -> None:
     )
 
     engine.dispose()
+
+
+# TODO hacer README
