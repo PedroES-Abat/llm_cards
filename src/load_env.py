@@ -4,8 +4,10 @@
 Description: Load environment variables from env/.env file or Streamlit secrets.
 """
 
-from pathlib import Path
 from os import environ
+from pathlib import Path
+
+import streamlit as st
 
 from dotenv import load_dotenv
 
@@ -19,11 +21,13 @@ def load_environment_variables():
         return
 
     try:
-        import streamlit as st
+
         for key, value in st.secrets.items():
             environ[key] = str(value)
     except Exception:
-        raise FileNotFoundError(f"Environment file not found at: {ENV_PATH} and no Streamlit secrets available.")
+        raise FileNotFoundError(
+            f"Environment file not found at: {ENV_PATH} and no Streamlit secrets available."
+        )
 
 
 def load_env_var(env_var_name: str, target_type=None):
