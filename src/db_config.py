@@ -20,7 +20,7 @@ def create_db_engine():
     url = URL.create(
         drivername="postgresql+psycopg",
         username=load_env_var("Usuario"),
-        password=load_env_var("Contraseña"),
+        password=load_env_var("Contrasena"),
         host=load_env_var("HOST"),
         port=load_env_var("Puerto"),
         database=load_env_var("NombreDB"),
