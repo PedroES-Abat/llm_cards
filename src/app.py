@@ -10,10 +10,10 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 from streamlit.runtime.uploaded_file_manager import UploadedFile
-from sqlalchemy import create_engine
+from pydantic_ai.exceptions import ModelHTTPError
 
-from ai_agent import process_card_img, insert_card_in_db
-from load_env import load_env_var
+from ai_agent import process_card_img, insert_card_in_db, update_cards_in_db
+from db_config import create_db_engine
 
 
 def convert_img_to_bytes(img: UploadedFile) -> dict:
@@ -33,15 +33,25 @@ def main():
     submit = st.button("Enviar")
 
     if submit and uploaded_file:
+        try:
+            result = convert_img_to_bytes(uploaded_file)
+            result["Comments"] = comments
+            insert_card_in_db(result)
 
-        result = convert_img_to_bytes(uploaded_file)
-        result["Comments"] = comments
-        insert_card_in_db(result)
+        except ModelHTTPError:
+            st.error("Error de comunicación con Gemini, vuelve a intentarlo.")
 
-    engine = create_engine(load_env_var("DATABASE_URL"))
+    engine = create_db_engine()
     df = pd.read_sql('SELECT * FROM "CardsInfo"', engine)
     engine.dispose()
-    st.dataframe(df)
+
+    db_df = st.data_editor(df, key="cards_editor", disabled=["Id"], num_rows="fixed")
+
+    if st.button("Guardar cambios"):
+        update_cards_in_db(db_df)
+        del st.session_state["cards_editor"]
+        st.success("Cambios guardados.")
+        st.rerun()
 
 
 if __name__ == "__main__":

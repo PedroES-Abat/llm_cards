@@ -17,11 +17,12 @@ Activate the venv.
 ```
 
 ```cmd
-python src/run_invoice_llm.py
+streamlit run src/app.py
 ```
 
 # Usage
-The server will indicate the ip in which it is running.  
+Open the URL that streamlit print on the logs.
 
-The server will receive post requests in http://{ip}:5002/invoice-understanding-llm with the followin body:
-- pdf_file: A form-data pdf file with the invoice.
+- Upload an image of a business card.
+- Gemini extracts the data and sends it to the db.
+

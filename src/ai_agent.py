@@ -8,13 +8,16 @@ Description: Extracts contact information from business card images using a Gemi
 """
 
 import pandas as pd
+import numpy as np
 from pydantic_ai import Agent, BinaryContent
-from pydantic_ai.exceptions import ModelHTTPError
 from pydantic import BaseModel
-from sqlalchemy import create_engine
 from time import sleep
+from pathlib import Path
+from sqlalchemy import MetaData, Table
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from load_env import load_environment_variables, load_env_var
+from db_config import create_db_engine
 
 load_environment_variables()
 AI_MODEL = load_env_var("GEMINI_AI_MODEL")
@@ -41,12 +44,11 @@ def create_ai_agent_cards() -> Agent:
             "You are an AI agent specialized in extracting contact information from business cards. "
             "Given an image of a business card, extract the following information: "
             "1. Company address: the full address of the company as shown on the card. "
-            "2. Person mobile number: the personal cell phone number of the individual, not the company. "
-            "Look for labels like 'Cel', 'Móvil', 'Mobile', 'Cell', 'M:'. "
-            "Mobile numbers in Mexico typically start with area code + 10 digits total. "
-            "If no label is present, a 10-digit number without extension is likely a mobile. "
+            "2. Person mobile number: the personal cell phone number of the individual. "
+            "Look for icons like 📱 or labels like 'Cel', 'Móvil', 'Mobile', 'Cell', 'M:'. "
+            "If no label is present, a number without extension is likely a mobile. "
             "3. Person office number: the company landline or direct office line. "
-            "Look for labels like 'Tel', 'Office', 'Oficina', 'Direct', 'Ph', 'T:', 'PBX'. "
+            "Look for icons like 📞 or labels like 'Tel', 'Office', 'Oficina', 'Direct', 'Ph', 'T:', 'PBX'. "
             "Office numbers often include an extension (e.g., 'Ext. 123'). "
             "If multiple numbers exist and one has an extension, that one is the office number. "
             "4. Person role: the job title or position of the person on the card. "
@@ -75,9 +77,7 @@ def query_agent_img(agent: Agent, image_bytes: bytes, img_ext: str) -> any:
                     BinaryContent(data=image_bytes, media_type=f"image/{img_ext}"),
                 ]
             )
-        except (
-            Exception
-        ) as e:  # TODO pydantic_ai.exceptions.ModelHTTPError poner error de comunicacion con Gemini vuelve a intentarlo
+        except Exception as e:
             if attempt == 2:
                 raise
             sleep(2)
@@ -96,10 +96,32 @@ def insert_card_in_db(card_info: dict) -> None:
     # TODO Copiar create engine de SAF. Crear archivo de seguridad buscarlo en SAF (para el encriptado)
     """Inserts business card information into PostgreSQL."""
 
-    engine = create_engine(load_env_var("DATABASE_URL"))
+    engine = create_db_engine()
     pd.DataFrame([card_info]).to_sql(
         "CardsInfo", engine, if_exists="append", index=False
     )
+
+    engine.dispose()
+
+
+def update_cards_in_db(df: pd.DataFrame) -> None:
+    """Upserts the edited dataframe into CardsInfo: updates existing rows by Id."""
+
+    engine = create_db_engine()
+    table = Table("CardsInfo", MetaData(), autoload_with=engine)
+
+    rows = df.replace({np.nan: None}).to_dict(orient="records")
+    if not rows:
+        return
+
+    stmt = pg_insert(table).values(rows)
+    update_dict = {
+        col.name: stmt.excluded[col.name] for col in table.columns if col.name != "Id"
+    }
+    stmt = stmt.on_conflict_do_update(index_elements=["Id"], set_=update_dict)
+
+    with engine.begin() as conn:
+        conn.execute(stmt)
 
     engine.dispose()
 
