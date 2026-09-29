@@ -1,5 +1,6 @@
 streamlit
 pydantic-ai==0.0.55
+opentelemetry-api==1.32.1
 pydantic==2.11.3
 python-dotenv==1.1.0
 pandas==2.2.3
